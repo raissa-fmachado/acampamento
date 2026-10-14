@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import './style.css';
 import { criarNavegacao } from './navegacao.js';
 import { carregarOBJ, carregarGLTF } from './modelos.js';
-import { criarDiagnostico } from './diagnostico.js'; // NOVO
+import { criarDiagnostico } from './diagnostico.js';
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -111,8 +111,10 @@ carregarGLTF(scene, '/models/lanterna/Lantern.glb', {
 // ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
 
-// ---------- NOVO: Modo diagnóstico ----------
-criarDiagnostico(scene);
+// ---------- Modo diagnóstico ----------
+// NOVO: passa a câmera principal (pro CameraHelper) e guarda o retorno,
+// porque agora a renderização é feita pelo diagnóstico
+const diagnostico = criarDiagnostico(scene, camera);
 
 // ---------- Timer ----------
 // THREE.Timer mede o tempo entre um quadro e outro (delta, em segundos)
@@ -136,5 +138,6 @@ renderer.setAnimationLoop((timestamp) => {
 
   navegacao.atualizar(delta);
 
-  renderer.render(scene, camera);
+  // NOVO: no lugar de renderer.render(scene, camera)
+  diagnostico.renderizar(renderer);
 });
