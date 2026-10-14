@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import './style.css';
 import { criarNavegacao } from './navegacao.js';
-import { carregarOBJ, carregarGLTF } from './modelos.js'; // NOVO: carregarGLTF
+import { carregarOBJ, carregarGLTF } from './modelos.js';
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -86,7 +86,7 @@ carregarOBJ(scene, PASTA_SURVIVAL, 'campfire-pit', {
   escala: 2.5,
 });
 
-// NOVO: tronco ao lado da fogueira, pra servir de "banco"
+// tronco ao lado da fogueira, pra servir de "banco"
 // Tree Stump 01 (Poly Haven, Rob Tuytel) - licença CC0 1.0
 // os modelos do Poly Haven já vêm em escala real (1 unidade = 1 metro), então escala 1
 carregarGLTF(scene, '/models/tronco/tree_stump_01_1k.gltf', {
@@ -94,6 +94,17 @@ carregarGLTF(scene, '/models/tronco/tree_stump_01_1k.gltf', {
   posicao: new THREE.Vector3(2, 0, -1),
   escala: 1,
   rotacaoY: Math.PI / 4, // 45°
+});
+
+// NOVO: poste com lanterna ao lado da barraca
+// Lantern (Khronos glTF Sample Assets, Microsoft) - licença CC0 1.0
+// formato GLB: geometria, materiais e texturas empacotados num arquivo binário só
+// o modelo original tem ~26 unidades de altura; com escala 0.1 fica com ~2,6 m
+carregarGLTF(scene, '/models/lanterna/Lantern.glb', {
+  nome: 'lanterna',
+  posicao: new THREE.Vector3(-5.5, 0, -1.5),
+  escala: 0.1,
+  rotacaoY: -Math.PI / 4, // -45°, com a lanterna virada pro lado da fogueira
 });
 
 // ---------- Navegação ----------
