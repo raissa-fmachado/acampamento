@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import './style.css';
 import { criarNavegacao } from './navegacao.js';
 import { carregarOBJ, carregarGLTF } from './modelos.js';
+import { criarDiagnostico } from './diagnostico.js'; // NOVO
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -96,7 +97,7 @@ carregarGLTF(scene, '/models/tronco/tree_stump_01_1k.gltf', {
   rotacaoY: Math.PI / 4, // 45°
 });
 
-// NOVO: poste com lanterna ao lado da barraca
+// poste com lanterna ao lado da barraca
 // Lantern (Khronos glTF Sample Assets, Microsoft) - licença CC0 1.0
 // formato GLB: geometria, materiais e texturas empacotados num arquivo binário só
 // o modelo original tem ~26 unidades de altura; com escala 0.1 fica com ~2,6 m
@@ -109,6 +110,9 @@ carregarGLTF(scene, '/models/lanterna/Lantern.glb', {
 
 // ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
+
+// ---------- NOVO: Modo diagnóstico ----------
+criarDiagnostico(scene);
 
 // ---------- Timer ----------
 // THREE.Timer mede o tempo entre um quadro e outro (delta, em segundos)
