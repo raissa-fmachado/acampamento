@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import './style.css';
 import { criarNavegacao } from './navegacao.js';
-import { carregarOBJ } from './modelos.js';
+import { carregarOBJ, carregarGLTF } from './modelos.js'; // NOVO: carregarGLTF
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -84,6 +84,16 @@ carregarOBJ(scene, PASTA_SURVIVAL, 'tent-canvas', configBarraca);
 carregarOBJ(scene, PASTA_SURVIVAL, 'campfire-pit', {
   posicao: new THREE.Vector3(0, 0, -1.5),
   escala: 2.5,
+});
+
+// NOVO: tronco ao lado da fogueira, pra servir de "banco"
+// Tree Stump 01 (Poly Haven, Rob Tuytel) - licença CC0 1.0
+// os modelos do Poly Haven já vêm em escala real (1 unidade = 1 metro), então escala 1
+carregarGLTF(scene, '/models/tronco/tree_stump_01_1k.gltf', {
+  nome: 'tronco',
+  posicao: new THREE.Vector3(2, 0, -1),
+  escala: 1,
+  rotacaoY: Math.PI / 4, // 45°
 });
 
 // ---------- Navegação ----------

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // ---------- Carregar modelo OBJ ----------
 // O formato OBJ guarda só a geometria (vértices, normais, coordenadas UV).
@@ -40,5 +41,30 @@ export function carregarOBJ(scene, pasta, nome, { posicao = new THREE.Vector3(),
     },
     undefined,
     (erro) => console.error(`Erro ao carregar ${nome}.mtl`, erro)
+  );
+}
+
+// ---------- Carregar modelo glTF / GLB ----------
+// glTF é o formato "padrão da web" pra 3D: ele já traz geometria,
+// materiais PBR, texturas e a hierarquia dos objetos.
+// .gltf = texto (JSON) que aponta pra arquivos externos (.bin e texturas)
+// .glb  = versão binária, com tudo empacotado num arquivo só
+// O mesmo GLTFLoader lê os dois formatos.
+const gltfLoader = new GLTFLoader();
+
+export function carregarGLTF(scene, caminho, { nome = '', posicao = new THREE.Vector3(), escala = 1, rotacaoY = 0 } = {}) {
+  gltfLoader.load(
+    caminho,
+    (gltf) => {
+      // gltf.scene é o nó raiz do modelo (um Group com os Mesh dentro)
+      const modelo = gltf.scene;
+      modelo.name = nome;
+      modelo.position.copy(posicao);
+      modelo.scale.setScalar(escala);
+      modelo.rotation.y = rotacaoY;
+      scene.add(modelo);
+    },
+    undefined,
+    (erro) => console.error(`Erro ao carregar ${caminho}`, erro)
   );
 }
