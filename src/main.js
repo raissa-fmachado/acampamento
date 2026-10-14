@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import './style.css';
+import { criarNavegacao } from './navegacao.js'; // NOVO
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -33,7 +34,7 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 1.7, 5); // 1.7 = altura aproximada dos olhos de uma pessoa
 
-// ---------- NOVO: Luzes (versão básica) ----------
+// ---------- Luzes (versão básica) ----------
 // essa é só a iluminação mínima pra enxergar os modelos no M1;
 // as sombras e os ajustes finos de intensidade/cor ficam pro M2
 
@@ -53,8 +54,7 @@ scene.add(sol);
 // PlaneGeometry nasce "em pé" no plano XY, então giramos -90° no eixo X
 // pra ele ficar deitado no plano XZ (o chão)
 const geometriaChao = new THREE.PlaneGeometry(40, 40);
-// NOVO: trocamos MeshBasicMaterial por MeshStandardMaterial,
-// que reage à luz (modelo PBR). A textura entra no M3
+// MeshStandardMaterial reage à luz (modelo PBR). A textura entra no M3
 const materialChao = new THREE.MeshStandardMaterial({
   color: 0x4f7a3a,
   roughness: 1.0, // grama/terra é bem fosca, não tem reflexo
@@ -65,13 +65,22 @@ scene.add(chao);
 
 // ---------- Cubo de teste ----------
 // só pra confirmar que o pipeline está funcionando; vai sair quando os modelos entrarem
-// NOVO: também trocamos pra MeshStandardMaterial pra ver a luz agindo nas faces
 const cubo = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1),
   new THREE.MeshStandardMaterial({ color: 0xcccccc })
 );
 cubo.position.set(0, 0.5, 0);
 scene.add(cubo);
+
+// ---------- NOVO: Navegação ----------
+const navegacao = criarNavegacao(camera, renderer.domElement);
+
+// ---------- NOVO: Timer ----------
+// THREE.Timer mede o tempo entre um quadro e outro (delta, em segundos)
+// connect(document) faz ele pausar quando a aba fica escondida,
+// pra não vir um delta gigante quando a pessoa volta pra aba
+const timer = new THREE.Timer();
+timer.connect(document);
 
 // ---------- Redimensionamento ----------
 window.addEventListener('resize', () => {
@@ -81,6 +90,12 @@ window.addEventListener('resize', () => {
 });
 
 // ---------- Loop de renderização ----------
-renderer.setAnimationLoop(() => {
+// NOVO: o setAnimationLoop passa o timestamp do quadro atual
+renderer.setAnimationLoop((timestamp) => {
+  timer.update(timestamp); // update() uma vez por quadro, ANTES do getDelta()
+  const delta = timer.getDelta();
+
+  navegacao.atualizar(delta);
+
   renderer.render(scene, camera);
 });
