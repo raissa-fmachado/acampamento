@@ -80,6 +80,12 @@ const configBarraca = {
 carregarOBJ(scene, PASTA_SURVIVAL, 'tent', configBarraca);
 carregarOBJ(scene, PASTA_SURVIVAL, 'tent-canvas', configBarraca);
 
+// fogueira no centro da clareira, entre a barraca e o ponto de partida da câmera
+carregarOBJ(scene, PASTA_SURVIVAL, 'campfire-pit', {
+  posicao: new THREE.Vector3(0, 0, -1.5),
+  escala: 2.5,
+});
+
 // ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
 
