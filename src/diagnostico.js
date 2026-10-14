@@ -1,4 +1,4 @@
-import * as THREE from 'three'; // NOVO: pra usar o MeshDepthMaterial
+import * as THREE from 'three';
 import GUI from 'lil-gui';
 
 // ---------- Função auxiliar ----------
@@ -21,7 +21,8 @@ export function criarDiagnostico(scene) {
   // valores que o painel controla
   const opcoes = {
     wireframe: false,
-    profundidade: false, // NOVO
+    profundidade: false,
+    backfaceCulling: true, // NOVO: começa ligado, que é o padrão do Three.js
   };
 
   // 1. Wireframe
@@ -37,7 +38,7 @@ export function criarDiagnostico(scene) {
       });
     });
 
-  // NOVO: 2. Profundidade (z-buffer)
+  // 2. Profundidade (z-buffer)
   // MeshDepthMaterial pinta cada pixel de acordo com a profundidade dele,
   // o mesmo valor que vai pro z-buffer: mais perto da câmera = mais claro,
   // mais longe = mais escuro.
@@ -58,6 +59,33 @@ export function criarDiagnostico(scene) {
     .onChange((ativo) => {
       scene.overrideMaterial = ativo ? materialProfundidade : null;
       scene.background = ativo ? fundoProfundidade : fundoOriginal;
+    });
+
+  // NOVO: 3. Back-face culling
+  // Cada triângulo tem uma frente e um verso, definidos pela ordem dos vértices
+  // (sentido anti-horário visto da câmera = frente). Com o culling ligado
+  // (side = FrontSide), a GPU descarta os triângulos que estão de costas pra câmera
+  // antes de rasterizar, já que normalmente eles ficam escondidos atrás da parte
+  // da frente do objeto. Isso economiza processamento.
+  // Com o culling desligado (side = DoubleSide), os dois lados são desenhados.
+  //
+  // Onde dá pra ver a diferença:
+  //  - olhando o chão por baixo (com culling ele some, porque só a face de cima existe)
+  //  - com o wireframe ligado: sem culling aparecem também as arestas de trás dos modelos
+  gui
+    .add(opcoes, 'backfaceCulling')
+    .name('Back-face culling')
+    .onChange((ativo) => {
+      const lado = ativo ? THREE.FrontSide : THREE.DoubleSide;
+      paraCadaMaterial(scene, (material) => {
+        material.side = lado;
+        // mudar o side altera o shader que o Three.js gera pro material,
+        // então avisamos que ele precisa ser recompilado
+        material.needsUpdate = true;
+      });
+      // o material de profundidade também respeita a mesma configuração
+      materialProfundidade.side = lado;
+      materialProfundidade.needsUpdate = true;
     });
 
   return { gui, opcoes };
