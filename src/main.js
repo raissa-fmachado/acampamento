@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import './style.css';
 import { criarNavegacao } from './navegacao.js';
-import { carregarOBJ } from './modelos.js'; // NOVO
+import { carregarOBJ } from './modelos.js';
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -54,7 +54,8 @@ scene.add(sol);
 // ---------- Chão ----------
 // PlaneGeometry nasce "em pé" no plano XY, então giramos -90° no eixo X
 // pra ele ficar deitado no plano XZ (o chão)
-const geometriaChao = new THREE.PlaneGeometry(40, 40);
+// o chão é maior que a área navegável (40x40) pra borda ficar escondida na neblina
+const geometriaChao = new THREE.PlaneGeometry(100, 100);
 // MeshStandardMaterial reage à luz (modelo PBR). A textura entra no M3
 const materialChao = new THREE.MeshStandardMaterial({
   color: 0x4f7a3a,
@@ -64,16 +65,20 @@ const chao = new THREE.Mesh(geometriaChao, materialChao);
 chao.rotation.x = -Math.PI / 2;
 scene.add(chao);
 
-// ---------- NOVO: Modelos ----------
+// ---------- Modelos ----------
 // Survival Kit (Kenney) - licença CC0 1.0
 const PASTA_SURVIVAL = '/models/survival/';
 
 // barraca um pouco à esquerda e ao fundo, virada pro centro da clareira
-carregarOBJ(scene, PASTA_SURVIVAL, 'tent', {
+// no Survival Kit a barraca vem em duas partes: a armação (tent) e o pano (tent-canvas)
+// carregamos as duas com a mesma posição/escala/rotação pra elas se encaixarem
+const configBarraca = {
   posicao: new THREE.Vector3(-3, 0, -4),
   escala: 2.5,
   rotacaoY: Math.PI / 6, // 30°
-});
+};
+carregarOBJ(scene, PASTA_SURVIVAL, 'tent', configBarraca);
+carregarOBJ(scene, PASTA_SURVIVAL, 'tent-canvas', configBarraca);
 
 // ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
