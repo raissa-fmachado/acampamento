@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import './style.css';
-import { criarNavegacao } from './navegacao.js'; // NOVO
+import { criarNavegacao } from './navegacao.js';
+import { carregarOBJ } from './modelos.js'; // NOVO
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -63,19 +64,21 @@ const chao = new THREE.Mesh(geometriaChao, materialChao);
 chao.rotation.x = -Math.PI / 2;
 scene.add(chao);
 
-// ---------- Cubo de teste ----------
-// só pra confirmar que o pipeline está funcionando; vai sair quando os modelos entrarem
-const cubo = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshStandardMaterial({ color: 0xcccccc })
-);
-cubo.position.set(0, 0.5, 0);
-scene.add(cubo);
+// ---------- NOVO: Modelos ----------
+// Survival Kit (Kenney) - licença CC0 1.0
+const PASTA_SURVIVAL = '/models/survival/';
 
-// ---------- NOVO: Navegação ----------
+// barraca um pouco à esquerda e ao fundo, virada pro centro da clareira
+carregarOBJ(scene, PASTA_SURVIVAL, 'tent', {
+  posicao: new THREE.Vector3(-3, 0, -4),
+  escala: 2.5,
+  rotacaoY: Math.PI / 6, // 30°
+});
+
+// ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
 
-// ---------- NOVO: Timer ----------
+// ---------- Timer ----------
 // THREE.Timer mede o tempo entre um quadro e outro (delta, em segundos)
 // connect(document) faz ele pausar quando a aba fica escondida,
 // pra não vir um delta gigante quando a pessoa volta pra aba
@@ -90,7 +93,7 @@ window.addEventListener('resize', () => {
 });
 
 // ---------- Loop de renderização ----------
-// NOVO: o setAnimationLoop passa o timestamp do quadro atual
+// o setAnimationLoop passa o timestamp do quadro atual
 renderer.setAnimationLoop((timestamp) => {
   timer.update(timestamp); // update() uma vez por quadro, ANTES do getDelta()
   const delta = timer.getDelta();
