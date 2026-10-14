@@ -10,7 +10,16 @@ document.body.appendChild(renderer.domElement);
 
 // ---------- Cena ----------
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87a8c9);
+
+// NOVO: céu de fim de tarde
+// por enquanto é só uma cor de fundo; depois dá pra trocar por skybox/HDRI
+const corCeu = new THREE.Color(0xe8b48a);
+scene.background = corCeu;
+
+// NOVO: neblina com a mesma cor do céu
+// os objetos mais longe vão "sumindo" no céu, o que esconde a borda do chão
+// Fog(cor, near, far): começa a aparecer a 15 unidades e cobre tudo a 60
+scene.fog = new THREE.Fog(corCeu, 15, 60);
 
 // ---------- Câmera ----------
 // FOV de 75° (parecido com a visão humana)
@@ -24,8 +33,19 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 1.7, 5); // 1.7 = altura aproximada dos olhos de uma pessoa
 
+// ---------- NOVO: Chão ----------
+// PlaneGeometry nasce "em pé" no plano XY, então giramos -90° no eixo X
+// pra ele ficar deitado no plano XZ (o chão)
+const geometriaChao = new THREE.PlaneGeometry(40, 40);
+// MeshBasicMaterial não depende de luz; vai virar MeshStandardMaterial
+// quando a iluminação entrar (e ganhar textura no M3)
+const materialChao = new THREE.MeshBasicMaterial({ color: 0x4f7a3a });
+const chao = new THREE.Mesh(geometriaChao, materialChao);
+chao.rotation.x = -Math.PI / 2;
+scene.add(chao);
+
 // ---------- Cubo de teste ----------
-// só pra confirmar que o pipeline está funcionando; vai sair nos próximos commits
+// só pra confirmar que o pipeline está funcionando; vai sair quando os modelos entrarem
 const cubo = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1),
   new THREE.MeshNormalMaterial()
