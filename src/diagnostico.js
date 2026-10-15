@@ -15,7 +15,7 @@ function paraCadaMaterial(scene, funcao) {
 
 // ---------- Modo diagnóstico ----------
 // painel com lil-gui pra tornar visíveis etapas do pipeline de visualização
-// NOVO: agora recebe também a câmera principal (pra desenhar o frustum dela)
+// recebe também a câmera principal (pra desenhar o frustum dela)
 export function criarDiagnostico(scene, camera) {
   const gui = new GUI({ title: 'Modo diagnóstico' });
 
@@ -24,7 +24,14 @@ export function criarDiagnostico(scene, camera) {
     wireframe: false,
     profundidade: false,
     backfaceCulling: true, // começa ligado, que é o padrão do Three.js
-    visaoDeCima: false, // NOVO
+    visaoDeCima: false,
+    frustumCulling: true, // NOVO: também é o padrão do Three.js
+  };
+
+  // NOVO: contadores mostrados no painel (atualizados a cada quadro)
+  const contadores = {
+    chamadas: 0,
+    triangulos: 0,
   };
 
   // 1. Wireframe
@@ -90,7 +97,7 @@ export function criarDiagnostico(scene, camera) {
       materialProfundidade.needsUpdate = true;
     });
 
-  // NOVO: 4. Visão de cima com o frustum da câmera principal
+  // 4. Visão de cima com o frustum da câmera principal
   // Uma SEGUNDA câmera fica parada lá em cima olhando pra baixo.
   // Usamos uma OrthographicCamera (projeção ortográfica, sem perspectiva),
   // que funciona como um "mapa": as distâncias não encolhem com a profundidade.
@@ -111,7 +118,35 @@ export function criarDiagnostico(scene, camera) {
 
   gui.add(opcoes, 'visaoDeCima').name('Visão de cima (frustum)');
 
-  // ---------- NOVO: Renderização ----------
+  // NOVO: 5. Contadores do renderer.info, com e sem frustum culling
+  // FRUSTUM CULLING: antes de mandar um objeto pra GPU, o Three.js testa se a
+  // "caixa" que envolve o objeto (bounding sphere) está dentro do frustum da câmera.
+  // Se estiver totalmente fora, o objeto nem é enviado: economiza draw calls e triângulos.
+  // A propriedade frustumCulled de cada objeto liga/desliga esse teste.
+  //
+  // renderer.info.render guarda as estatísticas do último render():
+  //  - calls: quantas chamadas de desenho (draw calls) foram feitas pra GPU
+  //  - triangles: quantos triângulos foram enviados pra desenhar
+  //
+  // Como testar: olhe pro céu (sem nenhum objeto na tela).
+  //  - com o culling ligado, os números caem bastante
+  //  - com o culling desligado, os números ficam iguais olhando pra qualquer lado
+  gui
+    .add(opcoes, 'frustumCulling')
+    .name('Frustum culling')
+    .onChange((ativo) => {
+      scene.traverse((objeto) => {
+        objeto.frustumCulled = ativo;
+      });
+    });
+
+  // .listen() faz o painel atualizar o valor sozinho a cada quadro
+  // .disable() deixa o campo só pra leitura
+  const pastaInfo = gui.addFolder('renderer.info (visão principal)');
+  pastaInfo.add(contadores, 'chamadas').name('Draw calls').listen().disable();
+  pastaInfo.add(contadores, 'triangulos').name('Triângulos').listen().disable();
+
+  // ---------- Renderização ----------
   // substitui o renderer.render() do loop: desenha a visão normal na tela inteira e,
   // se a opção estiver ligada, desenha a visão de cima num quadro no canto inferior esquerdo
   function renderizar(renderer) {
@@ -125,6 +160,12 @@ export function criarDiagnostico(scene, camera) {
     renderer.setScissorTest(false);
     renderer.setViewport(0, 0, largura, altura);
     renderer.render(scene, camera);
+
+    // NOVO: lê os contadores LOGO DEPOIS do render principal.
+    // O renderer.info é zerado a cada render(), então se a gente lesse depois
+    // do render da visão de cima, os números seriam da câmera de cima
+    contadores.chamadas = renderer.info.render.calls;
+    contadores.triangulos = renderer.info.render.triangles;
 
     if (!opcoes.visaoDeCima) return;
 
