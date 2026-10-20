@@ -9,6 +9,11 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 // limita o pixel ratio em 2 pra não pesar em telas de alta densidade
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// M2: habilita o cálculo de sombras
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 document.body.appendChild(renderer.domElement);
 
 // ---------- Cena ----------
@@ -36,21 +41,40 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 1.7, 5); // 1.7 = altura aproximada dos olhos de uma pessoa
 
-// ---------- Luzes (versão básica) ----------
-// essa é só a iluminação mínima pra enxergar os modelos no M1;
-// as sombras e os ajustes finos de intensidade/cor ficam pro M2
+// ---------- Luzes (M2: iluminação e sombras) ----------
 
-// HemisphereLight: luz ambiente com duas cores, uma vindo de cima (céu)
-// e outra de baixo (chão). Fica mais natural que uma AmbientLight de cor única
-const luzAmbiente = new THREE.HemisphereLight(0xffd9b3, 0x3a5a2a, 0.8);
+// Iluminação geral: representa a contribuição do céu e do chão.
+// Ajuda a manter os objetos visíveis nas regiões sem luz direta.
+const luzAmbiente = new THREE.HemisphereLight(
+  0xffd9b3,
+  0x3a5a2a,
+  1.0
+);
 scene.add(luzAmbiente);
 
-// DirectionalLight: simula o sol. Os raios são paralelos, então só a
-// direção importa (da posição da luz até o alvo, que por padrão é a origem)
-// posição baixa no eixo Y = sol perto do horizonte, como no fim da tarde
+// Luz direcional: representa o Sol de fim de tarde.
+// Seus raios vêm de uma direção definida e ela projeta as sombras.
 const sol = new THREE.DirectionalLight(0xffb36b, 1.5);
 sol.position.set(-15, 8, -10);
+sol.castShadow = true;
+
+// Configurações do mapa de sombras
+sol.shadow.mapSize.set(2048, 2048);
+sol.shadow.camera.left = -15;
+sol.shadow.camera.right = 15;
+sol.shadow.camera.top = 15;
+sol.shadow.camera.bottom = -15;
+sol.shadow.camera.near = 0.5;
+sol.shadow.camera.far = 50;
+sol.shadow.bias = -0.0005;
+
 scene.add(sol);
+
+// Luz pontual: representa o brilho quente da fogueira.
+// Ela ilumina principalmente os objetos próximos.
+const luzFogueira = new THREE.PointLight(0xff7626, 4, 10);
+luzFogueira.position.set(0, 1.5, -1.5);
+scene.add(luzFogueira);
 
 // ---------- Chão ----------
 // PlaneGeometry nasce "em pé" no plano XY, então giramos -90° no eixo X
@@ -64,6 +88,9 @@ const materialChao = new THREE.MeshStandardMaterial({
 });
 const chao = new THREE.Mesh(geometriaChao, materialChao);
 chao.rotation.x = -Math.PI / 2;
+
+// M2: permite que o chão receba as sombras
+chao.receiveShadow = true;
 scene.add(chao);
 
 // ---------- Modelos ----------

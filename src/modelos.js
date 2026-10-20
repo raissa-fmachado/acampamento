@@ -27,12 +27,19 @@ export function carregarOBJ(scene, pasta, nome, { posicao = new THREE.Vector3(),
       objLoader.load(
         `${nome}.obj`,
         (objeto) => {
-          // o OBJLoader devolve um Group com um ou mais Mesh dentro;
-          // transformando o Group, todos os filhos acompanham (grafo de cena)
           objeto.name = nome;
           objeto.position.copy(posicao);
           objeto.scale.setScalar(escala);
           objeto.rotation.y = rotacaoY;
+
+          // M2: configura sombras em todas as malhas do modelo
+          objeto.traverse((filho) => {
+            if (filho.isMesh) {
+              filho.castShadow = true;
+              filho.receiveShadow = true;
+            }
+          });
+
           scene.add(objeto);
         },
         undefined,
@@ -56,12 +63,20 @@ export function carregarGLTF(scene, caminho, { nome = '', posicao = new THREE.Ve
   gltfLoader.load(
     caminho,
     (gltf) => {
-      // gltf.scene é o nó raiz do modelo (um Group com os Mesh dentro)
       const modelo = gltf.scene;
       modelo.name = nome;
       modelo.position.copy(posicao);
       modelo.scale.setScalar(escala);
       modelo.rotation.y = rotacaoY;
+
+      // M2: configura sombras em todas as malhas do modelo
+      modelo.traverse((filho) => {
+        if (filho.isMesh) {
+          filho.castShadow = true;
+          filho.receiveShadow = true;
+        }
+      });
+
       scene.add(modelo);
     },
     undefined,
