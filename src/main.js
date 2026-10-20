@@ -114,6 +114,37 @@ carregarOBJ(scene, PASTA_SURVIVAL, 'campfire-pit', {
   escala: 2.5,
 });
 
+// ---------- Chamas da fogueira ----------
+const chamas = new THREE.Group();
+
+// Chama maior
+const geometriaChamaMaior = new THREE.ConeGeometry(0.18, 0.65, 6);
+const materialChamaMaior = new THREE.MeshBasicMaterial({
+  color: 0xff5a0a
+});
+const chamaMaior = new THREE.Mesh(
+  geometriaChamaMaior,
+  materialChamaMaior
+);
+chamaMaior.position.set(0, 0.35, 0);
+chamas.add(chamaMaior);
+
+// Chama secundária
+const geometriaChamaMenor = new THREE.ConeGeometry(0.12, 0.42, 6);
+const materialChamaMenor = new THREE.MeshBasicMaterial({
+  color: 0xffc12e
+});
+const chamaMenor = new THREE.Mesh(
+  geometriaChamaMenor,
+  materialChamaMenor
+);
+chamaMenor.position.set(0.08, 0.25, 0.03);
+chamas.add(chamaMenor);
+
+// Posiciona as chamas sobre a fogueira
+chamas.position.set(0, 0.25, -1.5);
+scene.add(chamas);
+
 // tronco ao lado da fogueira, pra servir de "banco"
 // Tree Stump 01 (Poly Haven, Rob Tuytel) - licença CC0 1.0
 // os modelos do Poly Haven já vêm em escala real (1 unidade = 1 metro), então escala 1
@@ -164,6 +195,7 @@ renderer.setAnimationLoop((timestamp) => {
   const delta = timer.getDelta();
 
   navegacao.atualizar(delta);
+  chamas.rotation.y += delta * 1.5;
 
   // NOVO: no lugar de renderer.render(scene, camera)
   diagnostico.renderizar(renderer);
