@@ -1,0 +1,19 @@
+Iluminação e modelos de iluminação
+
+Para a iluminação da cena do acampamento, foram utilizadas três fontes de luz com funções distintas. 
+A `HemisphereLight` representa a contribuição luminosa do céu e do chão, ajudando a manter os objetos 
+visíveis mesmo nas regiões que não recebem iluminação direta. A `DirectionalLight` representa a luz solar 
+de fim de tarde, com raios provenientes de uma direção definida, contribuindo para a aparência da cena e 
+para a formação de sombras. Já a `PointLight` representa a iluminação localizada da fogueira, produzindo 
+luz em diferentes direções e contribuindo para a ambientação do acampamento.
+
+Para configurar as sombras, foi habilitado o mapa de sombras do renderizador por meio de `renderer.shadowMap.enabled = true`. 
+A luz direcional foi configurada para projetar sombras, enquanto o chão foi configurado para recebê-las. 
+As malhas dos modelos também foram configuradas para projetar e receber sombras. A resolução do mapa e os 
+limites da câmera de sombra foram ajustados para abranger a área principal da cena.
+
+Essas escolhas buscam representar um ambiente de acampamento ao entardecer, combinando a iluminação geral 
+do ambiente, a luz solar direcional e a iluminação localizada da fogueira. A presença de sombras contribui 
+para a percepção de profundidade e para a relação espacial entre os objetos.
+
+**Referência:** ALVES, Gabriel M. *Computação Gráfica: Iluminação*. Material de aula, S11.
