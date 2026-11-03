@@ -1,3 +1,4 @@
+
 import * as THREE from 'three';
 import './style.css';
 import { criarNavegacao } from './navegacao.js';
@@ -7,7 +8,6 @@ import { criarDiagnostico } from './diagnostico.js';
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-// limita o pixel ratio em 2 pra não pesar em telas de alta densidade
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 // M2: habilita o cálculo de sombras
@@ -19,32 +19,22 @@ document.body.appendChild(renderer.domElement);
 // ---------- Cena ----------
 const scene = new THREE.Scene();
 
-// céu de fim de tarde
-// por enquanto é só uma cor de fundo; depois dá pra trocar por skybox/HDRI
 const corCeu = new THREE.Color(0xe8b48a);
 scene.background = corCeu;
-
-// neblina com a mesma cor do céu
-// os objetos mais longe vão "sumindo" no céu, o que esconde a borda do chão
-// Fog(cor, near, far): começa a aparecer a 15 unidades e cobre tudo a 60
 scene.fog = new THREE.Fog(corCeu, 15, 60);
 
 // ---------- Câmera ----------
-// FOV de 75° (parecido com a visão humana)
-// near = 0.1 e far = 200: a clareira tem ~40x40 unidades, então 200 cobre a cena
-// com folga, sem desperdiçar precisão do z-buffer com um far muito grande
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   200
 );
-camera.position.set(0, 1.7, 5); // 1.7 = altura aproximada dos olhos de uma pessoa
+camera.position.set(0, 1.7, 5);
 
-// ---------- Luzes (M2: iluminação e sombras) ----------
+// ---------- Luzes (M2) ----------
 
-// Iluminação geral: representa a contribuição do céu e do chão.
-// Ajuda a manter os objetos visíveis nas regiões sem luz direta.
+// Iluminação geral do céu e do chão
 const luzAmbiente = new THREE.HemisphereLight(
   0xffd9b3,
   0x3a5a2a,
@@ -52,13 +42,11 @@ const luzAmbiente = new THREE.HemisphereLight(
 );
 scene.add(luzAmbiente);
 
-// Luz direcional: representa o Sol de fim de tarde.
-// Seus raios vêm de uma direção definida e ela projeta as sombras.
+// Sol de fim de tarde
 const sol = new THREE.DirectionalLight(0xffb36b, 1.5);
 sol.position.set(-15, 8, -10);
 sol.castShadow = true;
 
-// Configurações do mapa de sombras
 sol.shadow.mapSize.set(2048, 2048);
 sol.shadow.camera.left = -15;
 sol.shadow.camera.right = 15;
@@ -70,133 +58,242 @@ sol.shadow.bias = -0.0005;
 
 scene.add(sol);
 
-// Luz pontual: representa o brilho quente da fogueira.
-// Ela ilumina principalmente os objetos próximos.
+// Luz pontual da fogueira
 const luzFogueira = new THREE.PointLight(0xff7626, 4, 10);
 luzFogueira.position.set(0, 1.5, -1.5);
 scene.add(luzFogueira);
 
-// ---------- Chão ----------
-// PlaneGeometry nasce "em pé" no plano XY, então giramos -90° no eixo X
-// pra ele ficar deitado no plano XZ (o chão)
-// o chão é maior que a área navegável (40x40) pra borda ficar escondida na neblina
+// ---------- Texturas procedurais do chão (M3) ----------
+
+// Cria três mapas: cor, relevo e rugosidade.
+// As texturas são geradas pelo próprio JavaScript,
+// sem precisar adicionar imagens externas ao projeto.
+
+function criarMapasChao() {
+  const tamanho = 256;
+
+  const canvasCor = document.createElement('canvas');
+  const canvasRelevo = document.createElement('canvas');
+  const canvasRugosidade = document.createElement('canvas');
+
+  canvasCor.width = tamanho;
+  canvasCor.height = tamanho;
+
+  canvasRelevo.width = tamanho;
+  canvasRelevo.height = tamanho;
+
+  canvasRugosidade.width = tamanho;
+  canvasRugosidade.height = tamanho;
+
+  const contextoCor = canvasCor.getContext('2d');
+  const contextoRelevo = canvasRelevo.getContext('2d');
+  const contextoRugosidade = canvasRugosidade.getContext('2d');
+
+  const imagemCor = contextoCor.createImageData(tamanho, tamanho);
+  const imagemRelevo = contextoRelevo.createImageData(tamanho, tamanho);
+  const imagemRugosidade = contextoRugosidade.createImageData(tamanho, tamanho);
+
+  // Gera pequenas variações de verde e marrom,
+  // simulando grama misturada com terra.
+  for (let y = 0; y < tamanho; y++) {
+    for (let x = 0; x < tamanho; x++) {
+      const indice = (y * tamanho + x) * 4;
+
+      const ruido = Math.random();
+      const manchas = Math.sin(x * 0.12) * Math.cos(y * 0.10);
+
+      let vermelho;
+      let verde;
+      let azul;
+
+      if (ruido > 0.90) {
+        // Pequenas áreas de terra
+        vermelho = 91 + manchas * 8;
+        verde = 75 + manchas * 8;
+        azul = 43;
+      } else {
+        // Grama em diferentes tons de verde
+        vermelho = 42 + ruido * 15;
+        verde = 88 + ruido * 25 + manchas * 5;
+        azul = 31 + ruido * 10;
+      }
+
+      imagemCor.data[indice] = vermelho;
+      imagemCor.data[indice + 1] = verde;
+      imagemCor.data[indice + 2] = azul;
+      imagemCor.data[indice + 3] = 255;
+
+      // Mapa de relevo em tons de cinza.
+      // Diferenças de intensidade simulam irregularidades.
+      const relevo = 100 + ruido * 100;
+
+      imagemRelevo.data[indice] = relevo;
+      imagemRelevo.data[indice + 1] = relevo;
+      imagemRelevo.data[indice + 2] = relevo;
+      imagemRelevo.data[indice + 3] = 255;
+
+      // Mapa de rugosidade:
+      // valores claros representam superfícies mais ásperas.
+      const rugosidade = 190 + ruido * 65;
+
+      imagemRugosidade.data[indice] = rugosidade;
+      imagemRugosidade.data[indice + 1] = rugosidade;
+      imagemRugosidade.data[indice + 2] = rugosidade;
+      imagemRugosidade.data[indice + 3] = 255;
+    }
+  }
+
+  contextoCor.putImageData(imagemCor, 0, 0);
+  contextoRelevo.putImageData(imagemRelevo, 0, 0);
+  contextoRugosidade.putImageData(imagemRugosidade, 0, 0);
+
+  const texturaCor = new THREE.CanvasTexture(canvasCor);
+  const texturaRelevo = new THREE.CanvasTexture(canvasRelevo);
+  const texturaRugosidade = new THREE.CanvasTexture(canvasRugosidade);
+
+  // Repete as texturas para cobrir o chão.
+  // A repetição também utiliza as coordenadas UV do plano.
+  [texturaCor, texturaRelevo, texturaRugosidade].forEach((textura) => {
+    textura.wrapS = THREE.RepeatWrapping;
+    textura.wrapT = THREE.RepeatWrapping;
+    textura.repeat.set(8, 8);
+    textura.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  });
+
+  // O mapa de cor é uma textura de cor.
+  texturaCor.colorSpace = THREE.SRGBColorSpace;
+
+  return {
+    texturaCor,
+    texturaRelevo,
+    texturaRugosidade
+  };
+}
+
+const mapasChao = criarMapasChao();
+
+// ---------- Chão (M3) ----------
+
 const geometriaChao = new THREE.PlaneGeometry(100, 100);
-// MeshStandardMaterial reage à luz (modelo PBR). A textura entra no M3
+
 const materialChao = new THREE.MeshStandardMaterial({
-  color: 0x4f7a3a,
-  roughness: 1.0, // grama/terra é bem fosca, não tem reflexo
+  color: 0xffffff,
+
+  // Textura de grama e terra
+  map: mapasChao.texturaCor,
+
+  // Mapa de relevo
+  bumpMap: mapasChao.texturaRelevo,
+  bumpScale: 0.06,
+
+  // Mapa de rugosidade
+  roughnessMap: mapasChao.texturaRugosidade,
+  roughness: 1.0,
+
+  metalness: 0.0
 });
+
 const chao = new THREE.Mesh(geometriaChao, materialChao);
 chao.rotation.x = -Math.PI / 2;
-
-// M2: permite que o chão receba as sombras
 chao.receiveShadow = true;
+
 scene.add(chao);
 
 // ---------- Modelos ----------
-// Survival Kit (Kenney) - licença CC0 1.0
+
 const PASTA_SURVIVAL = '/models/survival/';
 
-// barraca um pouco à esquerda e ao fundo, virada pro centro da clareira
-// no Survival Kit a barraca vem em duas partes: a armação (tent) e o pano (tent-canvas)
-// carregamos as duas com a mesma posição/escala/rotação pra elas se encaixarem
+// Barraca: utiliza os materiais e a textura do arquivo MTL.
 const configBarraca = {
   posicao: new THREE.Vector3(-3, 0, -4),
   escala: 2.5,
-  rotacaoY: Math.PI / 6, // 30°
+  rotacaoY: Math.PI / 6
 };
+
 carregarOBJ(scene, PASTA_SURVIVAL, 'tent', configBarraca);
 carregarOBJ(scene, PASTA_SURVIVAL, 'tent-canvas', configBarraca);
 
-// fogueira no centro da clareira, entre a barraca e o ponto de partida da câmera
+// Fogueira
 carregarOBJ(scene, PASTA_SURVIVAL, 'campfire-pit', {
   posicao: new THREE.Vector3(0, 0, -1.5),
-  escala: 2.5,
+  escala: 2.5
 });
 
 // ---------- Chamas da fogueira ----------
+
 const chamas = new THREE.Group();
 
-// Chama maior
 const geometriaChamaMaior = new THREE.ConeGeometry(0.18, 0.65, 6);
 const materialChamaMaior = new THREE.MeshBasicMaterial({
   color: 0xff5a0a
 });
+
 const chamaMaior = new THREE.Mesh(
   geometriaChamaMaior,
   materialChamaMaior
 );
+
 chamaMaior.position.set(0, 0.35, 0);
 chamas.add(chamaMaior);
 
-// Chama secundária
 const geometriaChamaMenor = new THREE.ConeGeometry(0.12, 0.42, 6);
 const materialChamaMenor = new THREE.MeshBasicMaterial({
   color: 0xffc12e
 });
+
 const chamaMenor = new THREE.Mesh(
   geometriaChamaMenor,
   materialChamaMenor
 );
+
 chamaMenor.position.set(0.08, 0.25, 0.03);
 chamas.add(chamaMenor);
 
-// Posiciona as chamas sobre a fogueira
 chamas.position.set(0, 0.25, -1.5);
 scene.add(chamas);
 
-// tronco ao lado da fogueira, pra servir de "banco"
-// Tree Stump 01 (Poly Haven, Rob Tuytel) - licença CC0 1.0
-// os modelos do Poly Haven já vêm em escala real (1 unidade = 1 metro), então escala 1
+// Tronco: utiliza os materiais PBR e mapas do glTF.
 carregarGLTF(scene, '/models/tronco/tree_stump_01_1k.gltf', {
   nome: 'tronco',
   posicao: new THREE.Vector3(2, 0, -1),
   escala: 1,
-  rotacaoY: Math.PI / 4, // 45°
+  rotacaoY: Math.PI / 4
 });
 
-// poste com lanterna ao lado da barraca
-// Lantern (Khronos glTF Sample Assets, Microsoft) - licença CC0 1.0
-// formato GLB: geometria, materiais e texturas empacotados num arquivo binário só
-// o modelo original tem ~26 unidades de altura; com escala 0.1 fica com ~2,6 m
+// Lanterna: utiliza os materiais e texturas do GLB.
 carregarGLTF(scene, '/models/lanterna/Lantern.glb', {
   nome: 'lanterna',
   posicao: new THREE.Vector3(-5.5, 0, -1.5),
   escala: 0.1,
-  rotacaoY: -Math.PI / 4, // -45°, com a lanterna virada pro lado da fogueira
+  rotacaoY: -Math.PI / 4
 });
 
 // ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
 
 // ---------- Modo diagnóstico ----------
-// NOVO: passa a câmera principal (pro CameraHelper) e guarda o retorno,
-// porque agora a renderização é feita pelo diagnóstico
 const diagnostico = criarDiagnostico(scene, camera);
 
 // ---------- Timer ----------
-// THREE.Timer mede o tempo entre um quadro e outro (delta, em segundos)
-// connect(document) faz ele pausar quando a aba fica escondida,
-// pra não vir um delta gigante quando a pessoa volta pra aba
 const timer = new THREE.Timer();
 timer.connect(document);
 
 // ---------- Redimensionamento ----------
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix(); // recalcula a matriz de projeção com o novo aspect
+  camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 // ---------- Loop de renderização ----------
-// o setAnimationLoop passa o timestamp do quadro atual
 renderer.setAnimationLoop((timestamp) => {
-  timer.update(timestamp); // update() uma vez por quadro, ANTES do getDelta()
+  timer.update(timestamp);
   const delta = timer.getDelta();
 
   navegacao.atualizar(delta);
+
+  // Movimento das chamas
   chamas.rotation.y += delta * 1.5;
 
-  // NOVO: no lugar de renderer.render(scene, camera)
   diagnostico.renderizar(renderer);
 });
