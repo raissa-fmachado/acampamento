@@ -1,6 +1,16 @@
 import * as THREE from 'three';
 
-// ---------- Texturas procedurais do chão (M3) ----------
+// ---------- Texturas procedurais (M3) ----------
+// Todas as texturas deste arquivo são geradas pelo próprio JavaScript
+// (desenhadas pixel a pixel num <canvas>), sem imagens externas.
+// Cada material recebe três mapas:
+//  - cor (map): a cor base da superfície
+//  - relevo (bumpMap): tons de cinza, claro = alto, escuro = baixo.
+//    O shader usa a variação desse valor pra "entortar" a normal de cada pixel,
+//    simulando relevo sem mudar a geometria
+//  - rugosidade (roughnessMap): claro = áspero (reflexo espalhado),
+//    escuro = liso (reflexo mais concentrado)
+//
 // "anisotropia" vem de renderer.capabilities.getMaxAnisotropy() no main.js.
 // Ela melhora a nitidez da textura quando vista em ângulo rasante (o chão).
 
@@ -34,40 +44,70 @@ export function criarRuido(tamanho, celula) {
   };
 }
 
-// Cria três mapas: cor, relevo e rugosidade.
-// As texturas são geradas pelo próprio JavaScript,
-// sem precisar adicionar imagens externas ao projeto.
+// ---------- Gerador genérico de mapas ----------
+// Percorre todos os pixels e chama "pixel(x, y)", que devolve
+// { cor: [r, g, b], relevo, rugosidade } (valores de 0 a 255).
+// Assim cada material só precisa descrever a "receita" de um pixel.
+function criarMapas(tamanho, pixel, { repeticao = 1, anisotropia = 1 } = {}) {
+  const canvas = {};
+  const contexto = {};
+  const imagem = {};
+
+  ['cor', 'relevo', 'rugosidade'].forEach((tipo) => {
+    canvas[tipo] = document.createElement('canvas');
+    canvas[tipo].width = tamanho;
+    canvas[tipo].height = tamanho;
+    contexto[tipo] = canvas[tipo].getContext('2d');
+    imagem[tipo] = contexto[tipo].createImageData(tamanho, tamanho);
+  });
+
+  for (let y = 0; y < tamanho; y++) {
+    for (let x = 0; x < tamanho; x++) {
+      const indice = (y * tamanho + x) * 4;
+      const { cor, relevo, rugosidade } = pixel(x, y);
+
+      imagem.cor.data.set([cor[0], cor[1], cor[2], 255], indice);
+      imagem.relevo.data.set([relevo, relevo, relevo, 255], indice);
+      imagem.rugosidade.data.set([rugosidade, rugosidade, rugosidade, 255], indice);
+    }
+  }
+
+  const texturas = {};
+  ['cor', 'relevo', 'rugosidade'].forEach((tipo) => {
+    contexto[tipo].putImageData(imagem[tipo], 0, 0);
+
+    const textura = new THREE.CanvasTexture(canvas[tipo]);
+    // RepeatWrapping: quando a coordenada UV passa de 1, a textura se repete
+    textura.wrapS = THREE.RepeatWrapping;
+    textura.wrapT = THREE.RepeatWrapping;
+    textura.repeat.set(repeticao, repeticao);
+    textura.anisotropy = anisotropia;
+    texturas[tipo] = textura;
+  });
+
+  // Só o mapa de cor é sRGB. Relevo e rugosidade são DADOS (números),
+  // então ficam no espaço linear, sem conversão de cor.
+  texturas.cor.colorSpace = THREE.SRGBColorSpace;
+
+  return {
+    texturaCor: texturas.cor,
+    texturaRelevo: texturas.relevo,
+    texturaRugosidade: texturas.rugosidade
+  };
+}
+
+// ---------- Chão: grama com manchas de terra ----------
 export function criarMapasChao(anisotropia = 1) {
   const tamanho = 512;
-
-  const criarCanvas = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = tamanho;
-    canvas.height = tamanho;
-    return canvas;
-  };
-
-  const canvasCor = criarCanvas();
-  const canvasRelevo = criarCanvas();
-  const canvasRugosidade = criarCanvas();
-
-  const contextoCor = canvasCor.getContext('2d');
-  const contextoRelevo = canvasRelevo.getContext('2d');
-  const contextoRugosidade = canvasRugosidade.getContext('2d');
-
-  const imagemCor = contextoCor.createImageData(tamanho, tamanho);
-  const imagemRelevo = contextoRelevo.createImageData(tamanho, tamanho);
-  const imagemRugosidade = contextoRugosidade.createImageData(tamanho, tamanho);
 
   // Três escalas de ruído: manchas grandes, médias e finas (fibras de grama)
   const ruidoGrande = criarRuido(tamanho, 128);
   const ruidoMedio = criarRuido(tamanho, 32);
   const ruidoFino = criarRuido(tamanho, 4);
 
-  for (let y = 0; y < tamanho; y++) {
-    for (let x = 0; x < tamanho; x++) {
-      const indice = (y * tamanho + x) * 4;
-
+  return criarMapas(
+    tamanho,
+    (x, y) => {
       const g = ruidoGrande(x, y);
       const m = ruidoMedio(x, y);
       const f = ruidoFino(x, y);
@@ -78,62 +118,19 @@ export function criarMapasChao(anisotropia = 1) {
       // Manchas de terra onde o ruído grande é alto
       const terra = Math.min(1, Math.max(0, (g - 0.62) * 3));
 
-      // Cor da grama
-      const verdeR = 38 + altura * 30;
-      const verdeG = 80 + altura * 55;
-      const verdeB = 28 + altura * 20;
+      // Cor da grama e da terra, misturadas pela máscara "terra"
+      const verde = [38 + altura * 30, 80 + altura * 55, 28 + altura * 20];
+      const marrom = [96 + f * 20, 76 + f * 18, 46 + f * 12];
+      const cor = verde.map((v, i) => v * (1 - terra) + marrom[i] * terra);
 
-      // Cor da terra
-      const terraR = 96 + f * 20;
-      const terraG = 76 + f * 18;
-      const terraB = 46 + f * 12;
-
-      // Mistura grama e terra
-      imagemCor.data[indice] = verdeR * (1 - terra) + terraR * terra;
-      imagemCor.data[indice + 1] = verdeG * (1 - terra) + terraG * terra;
-      imagemCor.data[indice + 2] = verdeB * (1 - terra) + terraB * terra;
-      imagemCor.data[indice + 3] = 255;
-
-      // Mapa de relevo em tons de cinza (claro = alto, escuro = baixo)
-      const relevo = altura * 255;
-      imagemRelevo.data[indice] = relevo;
-      imagemRelevo.data[indice + 1] = relevo;
-      imagemRelevo.data[indice + 2] = relevo;
-      imagemRelevo.data[indice + 3] = 255;
-
-      // Mapa de rugosidade: claro = mais áspero.
-      // A terra é um pouco menos áspera que a grama.
-      const rugosidade = 215 + f * 40 - terra * 35;
-      imagemRugosidade.data[indice] = rugosidade;
-      imagemRugosidade.data[indice + 1] = rugosidade;
-      imagemRugosidade.data[indice + 2] = rugosidade;
-      imagemRugosidade.data[indice + 3] = 255;
-    }
-  }
-
-  contextoCor.putImageData(imagemCor, 0, 0);
-  contextoRelevo.putImageData(imagemRelevo, 0, 0);
-  contextoRugosidade.putImageData(imagemRugosidade, 0, 0);
-
-  const texturaCor = new THREE.CanvasTexture(canvasCor);
-  const texturaRelevo = new THREE.CanvasTexture(canvasRelevo);
-  const texturaRugosidade = new THREE.CanvasTexture(canvasRugosidade);
-
-  // Repete as texturas para cobrir o chão.
-  // A repetição também utiliza as coordenadas UV do plano.
-  [texturaCor, texturaRelevo, texturaRugosidade].forEach((textura) => {
-    textura.wrapS = THREE.RepeatWrapping;
-    textura.wrapT = THREE.RepeatWrapping;
-    textura.repeat.set(10, 10);
-    textura.anisotropy = anisotropia;
-  });
-
-  // O mapa de cor é uma textura de cor (sRGB).
-  texturaCor.colorSpace = THREE.SRGBColorSpace;
-
-  return {
-    texturaCor,
-    texturaRelevo,
-    texturaRugosidade
-  };
+      return {
+        cor,
+        relevo: altura * 255,
+        // A terra é um pouco menos áspera que a grama
+        rugosidade: 215 + f * 40 - terra * 35
+      };
+    },
+    // Repete 10x para cobrir o chão de 100x100
+    { repeticao: 10, anisotropia }
+  );
 }
