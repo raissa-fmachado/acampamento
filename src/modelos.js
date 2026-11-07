@@ -1,4 +1,3 @@
-
 import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
@@ -50,6 +49,19 @@ export function carregarOBJ(
                 console.warn(
                   `O modelo ${nome} possui uma malha sem coordenadas UV.`
                 );
+              }
+
+              // M3: o tecido da barraca passa a usar material PBR
+              // (MeshStandardMaterial) em vez do Phong do MTLLoader,
+              // reaproveitando o mapa de cor original e com rugosidade alta.
+              if (nome === 'tent-canvas' && !Array.isArray(filho.material)) {
+                const mapaOriginal = filho.material.map;
+
+                filho.material = new THREE.MeshStandardMaterial({
+                  map: mapaOriginal,
+                  roughness: 0.95,
+                  metalness: 0.0
+                });
               }
             }
           });
