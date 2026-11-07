@@ -181,3 +181,40 @@ export function criarMapasPedra(anisotropia = 1) {
     { repeticao: 1, anisotropia }
   );
 }
+
+
+// ---------- Madeira: casca de tora com veios na vertical ----------
+export function criarMapasMadeira(anisotropia = 1) {
+  const tamanho = 256;
+  const quantidadeVeios = 24; // inteiro, pra textura continuar repetível
+
+  const ruidoMedio = criarRuido(tamanho, 32);
+  const ruidoFino = criarRuido(tamanho, 4);
+
+  return criarMapas(
+    tamanho,
+    (x, y) => {
+      const m = ruidoMedio(x, y);
+      const f = ruidoFino(x, y);
+
+      // Veios: uma onda seno ao longo de X. O ruído desloca a fase da onda,
+      // deixando as linhas tortas como numa madeira de verdade.
+      const fase = (x / tamanho) * quantidadeVeios + m * 1.5;
+      const onda = 0.5 + 0.5 * Math.sin(fase * Math.PI * 2);
+
+      // Sulcos: as partes baixas da onda viram fendas escuras e profundas
+      const sulco = Math.pow(1 - onda, 3);
+
+      const tom = 0.55 + onda * 0.3 + f * 0.15 - sulco * 0.35;
+      const cor = [110 * tom, 74 * tom, 44 * tom];
+
+      return {
+        cor,
+        relevo: (onda * 0.8 + f * 0.2) * 255,
+        // Casca seca: bem áspera, ainda mais dentro dos sulcos
+        rugosidade: 210 + sulco * 40 + f * 5
+      };
+    },
+    { repeticao: 1, anisotropia }
+  );
+}
