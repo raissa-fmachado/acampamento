@@ -134,3 +134,50 @@ export function criarMapasChao(anisotropia = 1) {
     { repeticao: 10, anisotropia }
   );
 }
+
+
+// ---------- Pedra: cinza, com rachaduras e manchas de líquen ----------
+export function criarMapasPedra(anisotropia = 1) {
+  const tamanho = 256;
+
+  const ruidoGrande = criarRuido(tamanho, 64);
+  const ruidoMedio = criarRuido(tamanho, 16);
+  const ruidoFino = criarRuido(tamanho, 2);
+  const ruidoRachadura = criarRuido(tamanho, 32);
+
+  return criarMapas(
+    tamanho,
+    (x, y) => {
+      const g = ruidoGrande(x, y);
+      const m = ruidoMedio(x, y);
+      const f = ruidoFino(x, y);
+
+      // Rachaduras: onde o ruído passa perto de 0.5, |r - 0.5| fica perto de 0.
+      // Isso forma "linhas" finas e irregulares, que viram sulcos escuros.
+      const r = Math.abs(ruidoRachadura(x, y) - 0.5);
+      const rachadura = Math.max(0, 1 - r * 25); // 1 = dentro da rachadura
+
+      // Líquen esverdeado só onde o ruído grande é bem alto
+      const liquen = Math.min(1, Math.max(0, (g - 0.7) * 4)) * m;
+
+      const cinza = 95 + g * 45 + m * 25 + f * 20 - rachadura * 55;
+      const cor = [
+        cinza * (1 - liquen) + 90 * liquen,
+        cinza * (1 - liquen) + 105 * liquen,
+        cinza * (1 - liquen) + 60 * liquen
+      ];
+
+      // Altura: superfície irregular, mais funda nas rachaduras
+      const altura = g * 0.35 + m * 0.4 + f * 0.25 - rachadura * 0.5;
+
+      return {
+        cor,
+        relevo: Math.max(0, altura) * 255,
+        // Pedra é áspera; as partes mais altas (expostas, gastas) são
+        // um pouco mais lisas que o fundo das rachaduras
+        rugosidade: 200 + f * 30 - m * 25 + rachadura * 40
+      };
+    },
+    { repeticao: 1, anisotropia }
+  );
+}
