@@ -3,7 +3,8 @@ import './style.css';
 import { criarNavegacao } from './navegacao.js';
 import { carregarOBJ, carregarGLTF } from './modelos.js';
 import { criarDiagnostico } from './diagnostico.js';
-import { criarMapasChao } from './texturas.js';
+import { criarMapasChao, criarMapasPedra } from './texturas.js';
+import { aplicarUVCaixa } from './uv.js';
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -105,7 +106,19 @@ const configBarraca = {
 };
 
 carregarOBJ(scene, PASTA_SURVIVAL, 'tent', configBarraca);
-carregarOBJ(scene, PASTA_SURVIVAL, 'tent-canvas', configBarraca);
+// M3: o tecido da barraca passa a usar material PBR
+// (MeshStandardMaterial) em vez do Phong do MTLLoader,
+// reaproveitando o mapa de cor original e com rugosidade alta (tecido fosco).
+carregarOBJ(scene, PASTA_SURVIVAL, 'tent-canvas', {
+  ...configBarraca,
+  prepararMalha: (malha) => {
+    malha.material = new THREE.MeshStandardMaterial({
+      map: malha.material.map,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+  }
+});
 
 // Fogueira
 carregarOBJ(scene, PASTA_SURVIVAL, 'campfire-pit', {
@@ -145,6 +158,45 @@ chamas.add(chamaMenor);
 
 chamas.position.set(0, 0.25, -1.5);
 scene.add(chamas);
+
+// ---------- Pedras (M3) ----------
+// Material de pedra: PBR com os três mapas procedurais.
+// roughness = 1 multiplica o roughnessMap (o valor final vem do mapa).
+// metalness = 0: pedra é um dielétrico (não metal).
+const mapasPedra = criarMapasPedra(renderer.capabilities.getMaxAnisotropy());
+
+const materialPedra = new THREE.MeshStandardMaterial({
+  map: mapasPedra.texturaCor,
+  bumpMap: mapasPedra.texturaRelevo,
+  bumpScale: 3.0,
+  roughnessMap: mapasPedra.texturaRugosidade,
+  roughness: 1.0,
+  metalness: 0.0
+});
+
+// As pedras usam a geometria da Kenney, mas com UVs novas (projeção em caixa)
+// e o material de pedra no lugar da paleta de cores original.
+function prepararPedra(malha) {
+  malha.geometry = aplicarUVCaixa(malha.geometry, 2);
+  malha.material = materialPedra;
+}
+
+const pedras = [
+  { nome: 'rock-a', posicao: [-6, 0, -6], escala: 3, rotacaoY: 0.4 },
+  { nome: 'rock-b', posicao: [5, 0, -6], escala: 4, rotacaoY: 1.2 },
+  { nome: 'rock-c', posicao: [6.5, 0, 2], escala: 2.5, rotacaoY: 2.1 },
+  { nome: 'rock-a', posicao: [-7, 0, 3], escala: 2, rotacaoY: 3.0 },
+  { nome: 'rock-b', posicao: [1.5, 0, -7], escala: 2, rotacaoY: 0.8 }
+];
+
+pedras.forEach(({ nome, posicao, escala, rotacaoY }) => {
+  carregarOBJ(scene, PASTA_SURVIVAL, nome, {
+    posicao: new THREE.Vector3(...posicao),
+    escala,
+    rotacaoY,
+    prepararMalha: prepararPedra
+  });
+});
 
 // Tronco: utiliza os materiais PBR e mapas do glTF.
 carregarGLTF(scene, '/models/tronco/tree_stump_01_1k.gltf', {

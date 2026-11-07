@@ -15,7 +15,11 @@ export function carregarOBJ(
   {
     posicao = new THREE.Vector3(),
     escala = 1,
-    rotacaoY = 0
+    rotacaoY = 0,
+    // M3: função opcional chamada para cada malha do modelo.
+    // Serve para trocar o material ou gerar novas UVs, sem precisar
+    // escrever um "if (nome === ...)" aqui dentro para cada modelo.
+    prepararMalha = null
   } = {}
 ) {
   const mtlLoader = new MTLLoader();
@@ -51,18 +55,7 @@ export function carregarOBJ(
                 );
               }
 
-              // M3: o tecido da barraca passa a usar material PBR
-              // (MeshStandardMaterial) em vez do Phong do MTLLoader,
-              // reaproveitando o mapa de cor original e com rugosidade alta.
-              if (nome === 'tent-canvas' && !Array.isArray(filho.material)) {
-                const mapaOriginal = filho.material.map;
-
-                filho.material = new THREE.MeshStandardMaterial({
-                  map: mapaOriginal,
-                  roughness: 0.95,
-                  metalness: 0.0
-                });
-              }
+              if (prepararMalha) prepararMalha(filho);
             }
           });
 
