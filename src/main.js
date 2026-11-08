@@ -13,7 +13,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 // M2: habilita o cálculo de sombras
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// PCFShadowMap: filtra a borda da sombra (sombra suave).
+// O PCFSoftShadowMap foi removido nas versões novas do Three.js
+// (gerava um aviso no console e já caía no PCFShadowMap).
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 document.body.appendChild(renderer.domElement);
 
@@ -247,6 +250,48 @@ carregarGLTF(scene, '/models/lanterna/Lantern.glb', {
   escala: 0.1,
   rotacaoY: -Math.PI / 4
 });
+
+// ---------- Floresta em volta da clareira (M3: ambiente coerente) ----------
+// As árvores ficam num anel FORA do limite de caminhada (LIMITE = 19 em
+// navegacao.js), formando a borda da clareira. A neblina (far = 60) esconde
+// o fim do chão, então o jogador vê "floresta" em todas as direções.
+// Aqui as árvores mantêm o material original do MTL (paleta da Kenney):
+// são objetos de fundo, e o estilo low poly combina com a barraca.
+//
+// Gerador pseudoaleatório com semente fixa: as árvores ficam sempre no mesmo
+// lugar a cada recarga (Math.random() mudaria tudo a cada F5).
+let semente = 42;
+function aleatorio() {
+  semente = (semente * 16807) % 2147483647;
+  return (semente - 1) / 2147483646;
+}
+
+const tiposArvore = ['tree', 'tree-tall', 'tree-autumn', 'tree-autumn-tall'];
+const QUANTIDADE_ARVORES = 60;
+
+for (let i = 0; i < QUANTIDADE_ARVORES; i++) {
+  // ângulo em volta do centro + pequena variação, raio entre 21 e 33
+  const angulo = (i / QUANTIDADE_ARVORES) * Math.PI * 2 + aleatorio() * 0.1;
+  const raio = 21 + aleatorio() * 12;
+
+  carregarOBJ(scene, PASTA_SURVIVAL, tiposArvore[Math.floor(aleatorio() * tiposArvore.length)], {
+    posicao: new THREE.Vector3(Math.cos(angulo) * raio, 0, Math.sin(angulo) * raio),
+    escala: 5 + aleatorio() * 3,
+    rotacaoY: aleatorio() * Math.PI * 2
+  });
+}
+
+// Tufos de grama espalhados dentro da clareira, longe da fogueira
+for (let i = 0; i < 40; i++) {
+  const angulo = aleatorio() * Math.PI * 2;
+  const raio = 4 + aleatorio() * 14;
+
+  carregarOBJ(scene, PASTA_SURVIVAL, 'grass-large', {
+    posicao: new THREE.Vector3(Math.cos(angulo) * raio, 0, Math.sin(angulo) * raio - 1.5),
+    escala: 1.2 + aleatorio() * 0.8,
+    rotacaoY: aleatorio() * Math.PI * 2
+  });
+}
 
 // ---------- Navegação ----------
 const navegacao = criarNavegacao(camera, renderer.domElement);
