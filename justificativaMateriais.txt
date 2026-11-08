@@ -1,0 +1,54 @@
+Texturas e materiais (M3)
+
+Todos os materiais criados pela equipe usam MeshStandardMaterial, o modelo PBR
+(Physically Based Rendering) do Three.js. Nele a aparência é controlada por
+parâmetros físicos: roughness (rugosidade) e metalness (metal ou não), além dos
+mapas de textura. Isso deixa os materiais coerentes entre si sob as mesmas luzes
+do M2 (HemisphereLight, DirectionalLight do sol e PointLight da fogueira).
+
+Materiais da cena:
+
+1. Chão (grama e terra) - textura procedural com cor, bumpMap e roughnessMap.
+   A textura se repete 10x (RepeatWrapping) usando as UVs do PlaneGeometry.
+   roughness alta (fosco), metalness 0. A terra é um pouco menos áspera que a grama.
+
+2. Pedra (rochas) - textura procedural com rachaduras e líquen.
+   As rachaduras são mais fundas no bumpMap e mais ásperas no roughnessMap.
+   bumpScale 3, metalness 0 (pedra é dielétrico).
+
+3. Madeira (toras de sentar) - textura procedural de casca com veios.
+   Os veios são uma onda seno deslocada por ruído. bumpScale 4, porque os
+   sulcos da casca são mais marcados que os da pedra. Bem áspera, metalness 0.
+
+4. Tecido da barraca - o material Phong do MTL foi trocado por MeshStandardMaterial,
+   reaproveitando o mapa de cor original, com roughness 0.95 (tecido fosco).
+
+5. Tronco (glTF) e lanterna (GLB) - usam os materiais PBR que já vêm nos arquivos.
+   O tronco tem mapa de cor, normalMap e mapa ARM (oclusão, rugosidade e metal
+   em uma imagem só, nos canais R, G e B). A lanterna tem mapa de cor, normalMap,
+   mapa de metal/rugosidade (as partes de ferro são metálicas) e mapa emissivo.
+
+Mapeamento UV:
+Os modelos OBJ da Kenney têm UVs que apontam para uma paleta (colormap.png): cada
+face usa um único pixel de cor. Com essas UVs, uma textura de pedra ou madeira
+apareceria como cor chapada. Por isso foi criada a função aplicarUVCaixa (uv.js),
+que gera UVs novas por projeção em caixa (box mapping): para cada triângulo, a
+normal da face define de qual eixo a textura é projetada, e as outras duas
+coordenadas da posição viram (u, v). O eixo Z sempre fica em u nas faces X e Y,
+para que os veios da madeira sigam o comprimento da tora.
+
+Mapas de relevo:
+O bumpMap é uma imagem em tons de cinza (altura). O shader calcula a variação
+dessa altura entre pixels vizinhos e inclina a normal, simulando relevo sem
+alterar a geometria. Nos glTF é usado normalMap, que guarda a normal já pronta
+em RGB. No painel "Materiais (M3)" do lil-gui é possível desligar os mapas de
+relevo e de rugosidade e ajustar bumpScale e roughness de cada material.
+
+Ambiente coerente:
+A clareira é cercada por um anel de árvores fora do limite de caminhada, com tufos
+de grama dentro dela. A neblina na cor do céu esconde o fim do chão. As posições
+usam um gerador pseudoaleatório com semente fixa, para a cena ser sempre a mesma.
+As árvores e a grama mantêm a paleta original da Kenney, por serem objetos de fundo.
+
+Texturas procedurais (geradas em JavaScript, sem imagens externas): texturas.js.
+Modelos: Survival Kit - Kenney (CC0).

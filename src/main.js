@@ -5,6 +5,7 @@ import { carregarOBJ, carregarGLTF } from './modelos.js';
 import { criarDiagnostico } from './diagnostico.js';
 import { criarMapasChao, criarMapasPedra, criarMapasMadeira } from './texturas.js';
 import { aplicarUVCaixa } from './uv.js';
+import { criarPainelMateriais } from './painelMateriais.js';
 
 // ---------- Renderer ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -298,6 +299,13 @@ const navegacao = criarNavegacao(camera, renderer.domElement);
 
 // ---------- Modo diagnóstico ----------
 const diagnostico = criarDiagnostico(scene, camera);
+
+// ---------- Painel de materiais (M3) ----------
+criarPainelMateriais(diagnostico.gui, scene, {
+  chao: materialChao,
+  pedra: materialPedra,
+  madeira: materialMadeira
+});
 
 // ---------- Timer ----------
 const timer = new THREE.Timer();
