@@ -135,7 +135,6 @@ export function criarMapasChao(anisotropia = 1) {
   );
 }
 
-
 // ---------- Pedra: cinza, com rachaduras e manchas de líquen ----------
 export function criarMapasPedra(anisotropia = 1) {
   const tamanho = 256;
@@ -182,11 +181,10 @@ export function criarMapasPedra(anisotropia = 1) {
   );
 }
 
-
-// ---------- Madeira: casca de tora com veios na vertical ----------
+// ---------- Madeira: casca de tora com veios ao longo de U ----------
 export function criarMapasMadeira(anisotropia = 1) {
   const tamanho = 256;
-  const quantidadeVeios = 24; // inteiro, pra textura continuar repetível
+  const quantidadeVeios = 12; // inteiro, pra textura continuar repetível
 
   const ruidoMedio = criarRuido(tamanho, 32);
   const ruidoFino = criarRuido(tamanho, 4);
@@ -197,15 +195,16 @@ export function criarMapasMadeira(anisotropia = 1) {
       const m = ruidoMedio(x, y);
       const f = ruidoFino(x, y);
 
-      // Veios: uma onda seno ao longo de X. O ruído desloca a fase da onda,
-      // deixando as linhas tortas como numa madeira de verdade.
-      const fase = (x / tamanho) * quantidadeVeios + m * 1.5;
+      // Veios: uma onda seno ao longo de Y (coordenada V). As linhas ficam
+      // paralelas a U, que é o comprimento da tora (ver uv.js).
+      // O ruído desloca a fase da onda, deixando as linhas tortas.
+      const fase = (y / tamanho) * quantidadeVeios + m * 0.8;
       const onda = 0.5 + 0.5 * Math.sin(fase * Math.PI * 2);
 
       // Sulcos: as partes baixas da onda viram fendas escuras e profundas
       const sulco = Math.pow(1 - onda, 3);
 
-      const tom = 0.55 + onda * 0.3 + f * 0.15 - sulco * 0.35;
+      const tom = 0.6 + onda * 0.25 + f * 0.15 - sulco * 0.25;
       const cor = [110 * tom, 74 * tom, 44 * tom];
 
       return {

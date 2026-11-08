@@ -3,7 +3,7 @@ import './style.css';
 import { criarNavegacao } from './navegacao.js';
 import { carregarOBJ, carregarGLTF } from './modelos.js';
 import { criarDiagnostico } from './diagnostico.js';
-import { criarMapasChao, criarMapasPedra } from './texturas.js';
+import { criarMapasChao, criarMapasPedra, criarMapasMadeira } from './texturas.js';
 import { aplicarUVCaixa } from './uv.js';
 
 // ---------- Renderer ----------
@@ -195,6 +195,40 @@ pedras.forEach(({ nome, posicao, escala, rotacaoY }) => {
     escala,
     rotacaoY,
     prepararMalha: prepararPedra
+  });
+});
+
+// ---------- Toras de madeira (bancos da fogueira) (M3) ----------
+// Mesma ideia das pedras: geometria da Kenney + UVs em caixa + mapas procedurais.
+// bumpScale maior que o da pedra porque os sulcos da casca são mais marcados.
+const mapasMadeira = criarMapasMadeira(renderer.capabilities.getMaxAnisotropy());
+
+const materialMadeira = new THREE.MeshStandardMaterial({
+  map: mapasMadeira.texturaCor,
+  bumpMap: mapasMadeira.texturaRelevo,
+  bumpScale: 4.0,
+  roughnessMap: mapasMadeira.texturaRugosidade,
+  roughness: 1.0,
+  metalness: 0.0
+});
+
+function prepararMadeira(malha) {
+  malha.geometry = aplicarUVCaixa(malha.geometry, 2);
+  malha.material = materialMadeira;
+}
+
+// Duas toras em volta da fogueira (que fica em x = 0, z = -1.5)
+const toras = [
+  { posicao: [-1.9, 0, -1.4], rotacaoY: 0.1 },
+  { posicao: [0.3, 0, -3.4], rotacaoY: Math.PI / 2 + 0.3 }
+];
+
+toras.forEach(({ posicao, rotacaoY }) => {
+  carregarOBJ(scene, PASTA_SURVIVAL, 'tree-log', {
+    posicao: new THREE.Vector3(...posicao),
+    escala: 2.5,
+    rotacaoY,
+    prepararMalha: prepararMadeira
   });
 });
 

@@ -49,7 +49,7 @@ export function aplicarUVCaixa(geometria, escala = 1) {
       if (nx >= ny && nx >= nz) {
         u = p.z; v = p.y; // face virada pra X
       } else if (ny >= nz) {
-        u = p.x; v = p.z; // face virada pra Y
+        u = p.z; v = p.x; // face virada pra Y
       } else {
         u = p.x; v = p.y; // face virada pra Z
       }
