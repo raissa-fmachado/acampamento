@@ -2,7 +2,7 @@
 
 Projeto da disciplina de Computação Gráfica (IFSP São João da Boa Vista, 2026), feito com Three.js e Vite.
 
-**Vídeo:** [link aqui]
+**Vídeo:** 
 
 ## Descrição
 
@@ -71,8 +71,8 @@ Ao ligar a visão de profundidade, quase toda a cena aparecia preta e não dava 
 Equipe: **Ana Julia Romera de Carvalho** e **Raissa Figueiredo Machado**.
 
 - **Raissa:** montagem da cena (chão, céu, carregamento dos modelos OBJ e glTF/GLB), navegação em primeira pessoa com `THREE.Timer` e painel do modo diagnóstico no lil-gui (wireframe, profundidade, back-face culling, CameraHelper e renderer.info).
-- **Ana Julia:** iluminação (tipos de luz, shadow map e bias), materiais e texturas, ajuste da câmera (near/far) e README.
-- **As duas:** gravação do vídeo, revisão final e revisão do código uma da outra.
+- **Ana Julia:** iluminação (tipos de luz, shadow map e bias), materiais e texturas, ajuste da câmera (near/far), README e gravação do vídeo.
+- **As duas:** revisão final e revisão do código uma da outra.
 
 ## Uso de IA
 
