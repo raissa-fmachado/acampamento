@@ -2,11 +2,12 @@
 
 Projeto da disciplina de Computação Gráfica (IFSP São João da Boa Vista, 2026), feito com Three.js e Vite.
 
-**Vídeo:** 
+**Vídeo:** https://youtu.be/eD-TQds4r9Q
 
 ## Descrição
 
 Uma clareira na floresta ao entardecer, com barraca, fogueira, toras, pedras, um tronco cortado e uma lanterna.
+A clareira é cercada por árvores, tem tufos de grama espalhados e neblina no horizonte.
 O jogador explora a cena em primeira pessoa.
 
 ## Como executar
@@ -29,6 +30,7 @@ npm run dev
 
 **Câmera:** `PerspectiveCamera` com FOV 75, near 0.1 e far 200, na altura dos olhos (1.7).
 O near pequeno deixa chegar perto dos objetos, e o far cobre a clareira toda.
+A neblina (`Fog` de 15 a 60) esconde o fim do chão.
 
 **Navegação:** as velocidades são em unidades por segundo e multiplicadas pelo delta do `THREE.Timer`.
 Assim o movimento é igual em qualquer FPS.
@@ -41,7 +43,8 @@ Assim o movimento é igual em qualquer FPS.
 **Sombras:** shadow map de 2048, câmera de sombra cobrindo só a área do acampamento e `bias` para evitar
 o shadow acne.
 
-**Materiais:** todos usam `MeshStandardMaterial` (PBR).
+**Materiais:** os objetos principais usam `MeshStandardMaterial` (PBR). As árvores, a grama e a estrutura da barraca
+ficaram com o material original do MTL, porque são objetos de fundo.
 - Chão, pedra e madeira: texturas procedurais com cor, bumpMap e roughnessMap.
 - Barraca: textura original com roughness alta (tecido fosco).
 - Tronco e lanterna: materiais do próprio arquivo, com normalMap.
@@ -56,7 +59,7 @@ Ao ligar a visão de profundidade, quase toda a cena aparecia preta e não dava 
 
 | Antes | Depois |
 |---|---|
-| ![antes](docs/img/antes.png) | ![depois](docs/img/depois.png) |
+| ![antes](img/antes.png) | ![depois](img/depois.png) |
 
 ## Créditos
 
@@ -77,8 +80,8 @@ Equipe: **Ana Julia Romera de Carvalho** e **Raissa Figueiredo Machado**.
 ## Uso de IA
 
 - **O que pedimos:** ajuda para definir a ideia e o escopo do projeto (proposta do M0) e rascunho do README.
-- **O que validamos ou mudamos:**simplificamos o README e conferimos o caso de diagnóstico com nossos próprios prints.
-- **O que descartamos:** Da proposta inicial, feita com ajuda da IA:
-° PointLight na lanterna: ficou só a luz da fogueira, e a lanterna brilha pelo material emissivo do próprio GLB.
-° Árvores e pedras feitas com geometrias do Three.js: trocamos pelos modelos da Kenney, que combinam com o estilo low poly da barraca e da fogueira.
-° Tronco cortado como assento: usamos toras de madeira em volta da fogueira, e o tronco ficou como decoração.
+- **O que validamos ou mudamos:** simplificamos o README e conferimos o caso de diagnóstico com nossos próprios prints.
+- **O que descartamos:** da proposta inicial, feita com ajuda da IA:
+  - PointLight na lanterna: ficou só a luz da fogueira, e a lanterna brilha pelo material emissivo do próprio GLB.
+  - Árvores e pedras feitas com geometrias do Three.js: trocamos pelos modelos da Kenney, que combinam com o estilo low poly da barraca e da fogueira.
+  - Tronco cortado como assento: usamos toras de madeira em volta da fogueira, e o tronco ficou como decoração.
