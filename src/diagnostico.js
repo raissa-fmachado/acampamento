@@ -28,7 +28,7 @@ export function criarDiagnostico(scene, camera) {
     frustumCulling: true, // NOVO: também é o padrão do Three.js
   };
 
-  // NOVO: contadores mostrados no painel (atualizados a cada quadro)
+  // Contadores mostrados no painel (atualizados a cada quadro)
   const contadores = {
     chamadas: 0,
     triangulos: 0,
@@ -118,7 +118,7 @@ export function criarDiagnostico(scene, camera) {
 
   gui.add(opcoes, 'visaoDeCima').name('Visão de cima (frustum)');
 
-  // NOVO: 5. Contadores do renderer.info, com e sem frustum culling
+  // 5. Contadores do renderer.info, com e sem frustum culling
   // FRUSTUM CULLING: antes de mandar um objeto pra GPU, o Three.js testa se a
   // "caixa" que envolve o objeto (bounding sphere) está dentro do frustum da câmera.
   // Se estiver totalmente fora, o objeto nem é enviado: economiza draw calls e triângulos.
@@ -161,7 +161,7 @@ export function criarDiagnostico(scene, camera) {
     renderer.setViewport(0, 0, largura, altura);
     renderer.render(scene, camera);
 
-    // NOVO: lê os contadores LOGO DEPOIS do render principal.
+    // Lê os contadores LOGO DEPOIS do render principal.
     // O renderer.info é zerado a cada render(), então se a gente lesse depois
     // do render da visão de cima, os números seriam da câmera de cima
     contadores.chamadas = renderer.info.render.calls;
